@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RAG Demo</title>
+<style>
+body{font-family:sans-serif;background:#0f0f1a;color:#e0e0e0;padding:40px;max-width:800px;margin:0 auto}
+h1{color:#7c3aed;text-align:center}
+.card{background:#1a1a2e;border:1px solid #2d2d4e;border-radius:12px;padding:24px;margin:20px 0}
+.btn{background:#7c3aed;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;width:100%;margin-top:12px;font-size:1rem}
+.btn:hover{background:#6d28d9}
+textarea{width:100%;background:#0f0f1a;border:1px solid #2d2d4e;border-radius:8px;padding:12px;color:#e0e0e0;font-size:1rem;min-height:80px}
+#status,#answer{margin-top:12px;padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>Document Q&A</h1>
+<div class="card">
+<h2 style="color:#a78bfa">1. Upload PDF</h2>
+<input type="file" id="fileInput" accept=".pdf">
+<button class="btn" id="uploadBtn">Upload and Process</button>
+<div id="status"></div>
+</div>
+<div class="card">
+<h2 style="color:#a78bfa">2. Ask a Question</h2>
+<textarea id="question" placeholder="Ask anything about the document..."></textarea>
+<button class="btn" id="askBtn">Ask</button>
+<div id="answer"></div>
+</div>
+<script>
+document.getElementById('uploadBtn').addEventListener('click', async function() {
+    var f = document.getElementById('fileInput').files[0];
+    if (!f) { alert('Please select a file'); return; }
+    var fd = new FormData();
+    fd.append('file', f);
+    var s = document.getElementById('status');
+    s.textContent = 'Processing...';
+    s.style.background = '#1a1a2e';
+    s.style.display = 'block';
+    try {
+        var r = await fetch('/upload', {method:'POST', body:fd});
+        var d = await r.json();
+        s.textContent = d.message || d.error;
+        s.style.background = r.ok ? '#1a3a2e' : '#3a1a1a';
+    } catch(e) {
+        s.textContent = 'Error: ' + e.message;
+        s.style.background = '#3a1a1a';
+    }
+});
+
+document.getElementById('askBtn').addEventListener('click', async function() {
+    var q = document.getElementById('question').value.trim();
+    if (!q) { alert('Please enter a question'); return; }
+    var a = document.getElementById('answer');
+    a.textContent = 'Thinking...';
+    a.style.display = 'block';
+    try {
+        var r = await fetch('/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q})});
+        var d = await r.json();
+        a.textContent = d.answer || d.error;
+    } catch(e) {
+        a.textContent = 'Error: ' + e.message;
+    }
+});
+</script>
+</body>
+</html>
